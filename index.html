@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kimi Attention Residuals 论文解读</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #000000;
+            color: #ffffff;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        .bg-gradient {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at top, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                        radial-gradient(ellipse at bottom right, rgba(16, 163, 127, 0.1) 0%, transparent 50%),
+                        #000000;
+            z-index: -1;
+        }
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            border-bottom: 1px solid #333333;
+        }
+        nav .logo { font-size: 20px; font-weight: 700; }
+        nav .logo span { color: #10a37f; }
+        main { max-width: 800px; margin: 0 auto; padding: 60px 20px; }
+        .hero { text-align: center; padding: 40px 0 60px; }
+        .hero h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffffff 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero .subtitle { font-size: 18px; color: #8e8e8e; }
+        .hero .tag {
+            display: inline-block;
+            background: rgba(16, 163, 127, 0.2);
+            color: #10a37f;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-top: 16px;
+        }
+        .audio-card {
+            background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+            border: 1px solid #333333;
+            border-radius: 16px;
+            padding: 32px;
+            margin: 40px 0;
+        }
+        .audio-card h2 {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #8e8e8e;
+            margin-bottom: 20px;
+        }
+        audio { width: 100%; height: 48px; border-radius: 24px; }
+        .content {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #333333;
+            border-radius: 16px;
+            padding: 40px;
+            margin-top: 40px;
+        }
+        .content h2 { font-size: 24px; margin-bottom: 24px; }
+        .section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #333333;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .section h3 {
+            font-size: 18px;
+            color: #10a37f;
+            margin-bottom: 12px;
+        }
+        .section p { font-size: 15px; color: #d1d5db; line-height: 1.8; }
+        .highlight {
+            background: rgba(16, 163, 127, 0.1);
+            border-left: 3px solid #10a37f;
+            padding: 20px;
+            margin: 24px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .highlight h3 { color: #10a37f; margin-bottom: 12px; }
+        .highlight ul { margin-left: 20px; }
+        .highlight li { color: #d1d5db; margin-bottom: 8px; }
+        .link-box {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid #6366f1;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+        .link-box a {
+            color: #818cf8;
+            text-decoration: none;
+        }
+        .link-box a:hover { text-decoration: underline; }
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #8e8e8e;
+            font-size: 14px;
+            border-top: 1px solid #333333;
+            margin-top: 60px;
+        }
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 28px; }
+            .content { padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    <nav>
+        <div class="logo">AI<span>Podcast</span></div>
+    </nav>
+    <main>
+        <div class="hero">
+            <h1>Kimi 注意力残差论文</h1>
+            <p class="subtitle">一看就懂的深度解读 | Moonshot AI 最新研究</p>
+            <span class="tag">🎓 泛科普</span>
+        </div>
+        <div class="audio-card">
+            <h2>🎧 播放音频</h2>
+            <audio controls>
+                <source src="https://deployai365-deploy-1329062606.cos.ap-guangzhou.myqcloud.com/uploads/1773773759_kimi_podcast.mp3" type="audio/mpeg">
+            </audio>
+        </div>
+        <div class="link-box">
+            <h3 style="color: #818cf8; margin-bottom: 12px;">📄 原文链接</h3>
+            <p>• <a href="https://github.com/MoonshotAI/Attention-Residuals">GitHub 仓库</a></p>
+            <p>• <a href="https://arxiv.org/abs/2603.15031">arXiv 论文</a></p>
+        </div>
+        <div class="content">
+            <h2>📝 论文解读</h2>
+            <div class="section">
+                <h3>🔍 背景：传统残差连接的问题</h3>
+                <p>传统的Transformer模型使用残差连接，就是把每一层的输出直接加到下一层的输入上。这种方式就像一条河流，源源不断地向下游传递信息。但是随着层数越来越多，信息会变得越来越稀释，就像一杯水不断被稀释一样。这就是深度学习中的一个经典问题。</p>
+            </div>
+            <div class="section">
+                <h3>💡 Kimi 的创新：注意力残差</h3>
+                <p>Kimi团队提出的"注意力残差"解决了这个问题。想象一下，你不是在简单地传递信息，而是让每一层都像一个智能的过滤器，能够自主选择哪些历史信息是重要的，哪些可以忽略。这样可以让AI更准确地理解和生成内容。</p>
+            </div>
+            <div class="section">
+                <h3>⚙️ 工作原理</h3>
+                <p>具体来说，这个方法让每个层都有一个小的学习器，它可以决定从之前的哪些层获取信息。就像你在写笔记时，不是简单抄写所有内容，而是有选择性地记录重点。</p>
+            </div>
+            <div class="section">
+                <h3>🚀 实用版本：块状注意力残差</h3>
+                <p>Kimi团队还提出了一个更实用的版本，叫做块状注意力残差。它把层分成小组，在小组内使用传统方式，在小组之间使用注意力选择。这样既保持了效果，又大大减少了计算成本。</p>
+            </div>
+            <div class="highlight">
+                <h3>📊 惊人效果</h3>
+                <ul>
+                    <li><strong>效率提升：</strong>只需要用相当于原来80%的计算量，就能达到同样的性能</li>
+                    <li><strong>实际意义：</strong>这意味着未来的AI模型可能会变得更高效、更强大</li>
+                    <li><strong>训练成本：</strong>可以显著降低AI模型的训练成本</li>
+                </ul>
+            </div>
+            <p style="margin-top: 24px; color: #8e8e8e; text-align: center;">这篇论文的意义在于，它不仅是一个技术改进，更提供了一种新的思路，让我们可以更好地训练更深层的AI模型。对于从事AI研究和应用的人来说，这是一篇值得仔细阅读的论文。</p>
+        </div>
+    </main>
+    <footer>
+        <p>🎵 语音由 AI 克隆技术生成</p>
+        <p>Powered by DeployAI</p>
+    </footer>
+</body>
+</html>
